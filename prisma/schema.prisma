@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  phoneNumber  String
+  passwordHash String
+  department   String?
+  profileImage String?
+  role         Role      @default(STUDENT)
+  isVerified   Boolean   @default(false)
+  isBanned     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  listings     Listing[]
+  reports      Report[]
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+model Listing {
+  id          String        @id @default(cuid())
+  title       String
+  description String
+  price       Decimal
+  condition   Condition
+  status      ListingStatus @default(ACTIVE)
+  location    String?
+  images      String[]
+  viewCount   Int           @default(0)
+  category    Category      @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  owner       User          @relation(fields: [ownerId], references: [id])
+  ownerId     String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  reports     Report[]
+}
+
+enum Condition {
+  NEW
+  USED_LIKE_NEW
+  USED_FAIR
+}
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  REMOVED
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  listings Listing[]
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  reason     String
+  details    String?
+  status     ReportStatus @default(OPEN)
+  listing    Listing      @relation(fields: [listingId], references: [id])
+  listingId  String
+  reportedBy User         @relation(fields: [userId], references: [id])
+  userId     String
+  createdAt  DateTime     @default(now())
+}
+
+enum ReportStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([email, token])
+}
